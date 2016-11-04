@@ -1,19 +1,11 @@
 #include "contiki.h"
 #include "contiki-net.h"
 #include "board-peripherals.h"
-#include "lib/sensors.h"
-#include "lib/list.h"
-#include "sys/process.h"
-#include "net/ipv6/sicslowpan.h"
-#include "button-sensor.h"
-#include "batmon-sensor.h"
 #include "http-socket/http-socket.h"
 #include "ip64-addr.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
+/* Utilisé pour afficher les adresses IP sur la liaison série PRINT6ADDR */
 #define DEBUG DEBUG_PRINT
 #include "net/ip/uip-debug.h"
 
@@ -29,7 +21,8 @@ PROCESS(bam_process, "\"Boite a meuh\" Process");
 /* on veut que le processus bam soit lancé automatiquement au démarrage du capteur */
 AUTOSTART_PROCESSES(&bam_process);
 
-struct ctimer sensors_timer;
+
+/* Stucture Contiki permettant de manipuler les socket HTTP*/
 static struct http_socket http;
 
 void meuh(void)
@@ -65,6 +58,7 @@ _accelerometer_handler(void)
 
 PROCESS_THREAD(bam_process, ev, data)
 {
+    /* Structure la manipulation des timers dans Contiki*/
     static struct etimer et;
     uip_ip4addr_t ip4addr;
     uip_ip6addr_t ip6addr;
@@ -74,12 +68,14 @@ PROCESS_THREAD(bam_process, ev, data)
     printf("The \"Boite à Meuh\" ipv6 ready\n");
     printf("Looking for IP addr\n");
 
-    /* transformation de l'adresse du dns google en ipv6 */
+    /* transformation de l'adresse du dns google en ipv6. */
+    /* On utilise l'adresse ipv4 car le service IFTTT ne dispose pas d'ipv6 */
+    /* donc on veut que DNS nous donne des adresses ipv4. */
     uip_ipaddr(&ip4addr, 8,8,8,8);
     ip64_addr_4to6(&ip4addr, &ip6addr);
     /* Mise a jour du dns de uip */
     uip_nameserver_update(&ip6addr, UIP_NAMESERVER_INFINITE_LIFETIME);
-    /* on arme un timer du 1s */
+    /* on arme un timer de 1s */
     etimer_set(&et, CLOCK_SECOND);
     /* initialisation de la structure permettant de faire des requête http */
     http_socket_init(&http);
